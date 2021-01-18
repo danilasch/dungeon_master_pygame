@@ -1,0 +1,6 @@
+#game settings
+WIDTH = 1920
+HEIGHT = 1080
+HALF_WIDTH = WIDTH // 2
+HALF_HEIGHT = HEIGHT // 2
+FPS = 60
