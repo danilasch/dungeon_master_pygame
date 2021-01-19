@@ -38,3 +38,14 @@ main_cursor = os.path.join('data', 'pics', 'cursor.png')
 # fonts
 main_font = os.path.join('data', 'fonts', 'main_font.ttf')
 head_font = os.path.join('data', 'fonts', 'head_font.ttf')
+
+# tiles
+tile_width = tile_height = 50
+width_sprite = 50
+height_sprite = 50
+walls_height = height_sprite * 2
+tile_images = {
+    'floor': load_image('floor.png'), 'wall': load_image('wall.png'),
+    # 'backwall1': pygame.transform.scale(load_image('backwall1.png'), (width_sprite, walls_height)),
+    # 'backwall2': pygame.transform.scale(load_image('backwall2.png'), (width_sprite, walls_height)),
+}

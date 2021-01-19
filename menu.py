@@ -1,4 +1,3 @@
-import pygame
 from settings import *
 from data import *
 from main import screen, clock, main, change_cursor
