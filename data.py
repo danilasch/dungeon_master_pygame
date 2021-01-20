@@ -1,8 +1,19 @@
 import pygame
 import os
 import sys
+from settings import *
 
 pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+clock = pygame.time.Clock()
+
+
+def change_cursor(cursor_image):
+    cursor_image = pygame.image.load(cursor_image).convert_alpha()
+
+    pygame.mouse.set_visible(False)
+
+    return cursor_image
 
 
 def load_image(name):
@@ -43,6 +54,4 @@ head_font = os.path.join('data', 'fonts', 'head_font.ttf')
 TILE_WIDTH = TILE_HEIGHT = 50
 tile_images = {
     'floor': load_image('floor.png'), 'wall': load_image('wall.png'),
-    # 'backwall1': pygame.transform.scale(load_image('backwall1.png'), (width_sprite, walls_height)),
-    # 'backwall2': pygame.transform.scale(load_image('backwall2.png'), (width_sprite, walls_height)),
 }
