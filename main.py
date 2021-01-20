@@ -13,46 +13,64 @@ tiles_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y, is_free, *groups):
+    def __init__(self, tile_type, pos_x, pos_y, *groups):
         super().__init__(*groups)
         self.image = tile_images[tile_type]
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y)
-        self.is_free = is_free
+        self.rect = self.image.get_rect().move(pos_x, pos_y)
 
 
 class Room(pygame.sprite.Group):
-    def __init__(self, filename):
+    def __init__(self, filename, position):
         super().__init__()
         filename = "data/maps/" + filename
         with open(filename, 'r') as mapFile:
             self.map = [line.strip() for line in mapFile]
+        self.x, self.y = position
         self.height = len(self.map)
         self.width = len(self.map[0])
-        self.tile_size = tile_width
+        y = 0
 
-        for y in range(len(self.map)):
-            for x in range(len(self.map[y])):
-                if self.map[y][x] == '.':
-                    Tile('floor', x, y, True, self)
-                elif self.map[y][x] == '#' or self.map[y][x] == '&':
-                    Tile('wall', x, y, False, self, borders)
-                elif self.map[y][x] == '@':
-                    Tile('floor', x, y, True, self)
+        for j in range(len(self.map)):
+            x = 0
+            for i in range(len(self.map[j])):
+                if self.map[j][i] == '.':
+                    Tile('floor', x + self.x, y + self.y, self)
+                elif self.map[j][i] == '#' or self.map[j][i] == '&':
+                    Tile('wall', x + self.x, y + self.y, self, borders)
+                elif self.map[j][i] == '@':
+                    Tile('floor', x + self.x, y + self.y, self)
                     global hero
-                    hero = Hero((x, y))
+                    hero = Hero((x + self.x, y + self.y))
+                x += TILE_WIDTH
+            y += TILE_HEIGHT
 
     def get_tile(self, position):
         return self.map[position[1]][position[0]]
 
+    def is_visible(self):
+        return (0 < self.x < WIDTH or 0 < self.x + self.width * TILE_WIDTH < WIDTH) and \
+               (0 < self.y < HEIGHT or 0 < 0 < self.y + self.height * TILE_HEIGHT < HEIGHT)
+
+    def move(self, camera):
+        self.x += camera.dx
+        self.y += camera.dy
+        for tile in self.sprites():
+            camera.apply(tile)
+
 
 class Map:
+    height, width = 12, 12
+
     def __init__(self):
-        self.map = [Room('start.txt')]
+        start_height, start_width = 11, 16
+        start_pos = (WIDTH - start_width * TILE_WIDTH) // 2,\
+                    (HEIGHT - start_height * TILE_HEIGHT) // 2
+        self.map = [Room('start.txt', start_pos)]
 
     def render(self):
         for room in self.map:
-            room.draw(screen)
+            if room.is_visible:
+                room.draw(screen)
 
     def update(self, screen):
         pass
@@ -62,7 +80,7 @@ class Hero(pygame.sprite.Sprite):
     def __init__(self, position):
         super().__init__()
         x, y = position
-        self.radius = 25
+        self.radius = TILE_WIDTH // 2
         self.speed = 5
         self.rect = pygame.Rect(x, y, self.radius, 2 * self.radius)
 
@@ -104,16 +122,16 @@ class Camera:
     # сдвинуть объект obj на смещение камеры
     def apply(self, obj):
         obj.rect.x += self.dx
-        if obj.rect.x < -obj.rect.width:
-            obj.rect.x += obj.rect.width * (self.size[0] + 1)
-        if obj.rect.x >= obj.rect.width * self.size[0]:
-            obj.rect.x += -obj.rect.width * (self.size[0] + 1)
+        # if obj.rect.x < -obj.rect.width:
+        #     obj.rect.x += obj.rect.width * (self.size[0] + 1)
+        # if obj.rect.x >= obj.rect.width * self.size[0]:
+        #     obj.rect.x += -obj.rect.width * (self.size[0] + 1)
 
         obj.rect.y += self.dy
-        if obj.rect.y < -obj.rect.height:
-            obj.rect.y += obj.rect.height * (self.size[0] + 1)
-        if obj.rect.y >= obj.rect.height * self.size[0]:
-            obj.rect.y += -obj.rect.height * (self.size[0] + 1)
+        # if obj.rect.y < -obj.rect.height:
+        #     obj.rect.y += obj.rect.height * (self.size[0] + 1)
+        # if obj.rect.y >= obj.rect.height * self.size[0]:
+        #     obj.rect.y += -obj.rect.height * (self.size[0] + 1)
 
     # позиционировать камеру на объекте target
     def update(self, target):
@@ -147,9 +165,8 @@ def calculate_motion(start_pos, final_pos, speed):
 def main():
     background_music.set_volume(0)
 
-    hero = Hero((HALF_WIDTH, HALF_HEIGHT))
-    game_map = Map()
-    game = Game(game_map, hero)
+    # camera = Camera((WIDTH, HEIGHT))
+    game = Game(Map(), Hero((HALF_WIDTH, HALF_HEIGHT)))
     running = True
     steps, distance = 0, 0
     while running:
@@ -163,6 +180,10 @@ def main():
             if event.type == pygame.QUIT:
                 sys.exit()
 
+        # camera.update(game.hero)
+        # print(camera.dx, camera.dy)
+        # for room in game.map.map:
+        #     room.move(camera)
         screen.fill(pygame.Color('black'))
         tiles_group.draw(screen)
         game.render(screen)
