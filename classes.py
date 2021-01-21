@@ -1,4 +1,5 @@
 from data import *
+import random
 
 borders = pygame.sprite.Group()
 
@@ -61,8 +62,26 @@ class Map:
             if room.is_visible:
                 room.draw(screen)
 
-    def update(self, screen):
-        pass
+    def update(self):
+        direction = random.choice((0, 1))
+        room = self.map[-1]
+        if direction == 0:  # новая комната справа
+            x, y = room.x, room.y
+            width, height = room.width, room.height
+            corridor_pos = x + width, y + width // 2 - TILE_HEIGHT
+            corridor = Room('horizontal.txt', corridor_pos)
+            self.map.append(corridor)
+            room_pos = corridor.x + corridor.width, y
+            self.map.append(Room('classroom.txt', room_pos))
+
+        else:  # новая комната ниже
+            x, y = room.x, room.y
+            width, height = room.width, room.height
+            corridor_pos = x + width // 2 - TILE_WIDTH, y + width
+            corridor = Room('vertical.txt', corridor_pos)
+            self.map.append(corridor)
+            room_pos = x, corridor.y + corridor.height
+            self.map.append(Room('classroom.txt', room_pos))
 
 
 class Hero(pygame.sprite.Sprite):
@@ -70,11 +89,13 @@ class Hero(pygame.sprite.Sprite):
         super().__init__()
         x, y = position
         self.radius = TILE_WIDTH // 2
+        x -= self.radius // 2
+        y -= self.radius
         self.speed = 5
         self.rect = pygame.Rect(x, y, self.radius, 2 * self.radius)
 
     def get_position(self):
-        return self.rect.x, self.rect.y
+        return self.rect.center
 
     def render(self, screen):
         pygame.draw.rect(screen, (255, 255, 255), self.rect)
@@ -96,7 +117,7 @@ class Game:  # служебный класс игры
         x += self.dx
         y += self.dy
         if not pygame.sprite.spritecollideany(Hero((x, y)), borders):
-            self.hero.rect.x, self.hero.rect.y = x, y
+            self.hero.rect.center = x, y
             self.camera.update(self.hero)
             for room in self.map.map:
                 room.move(self.camera)
@@ -117,5 +138,5 @@ class Camera:
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
-        target.rect.x = (WIDTH - target.rect.w) // 2
-        target.rect.y = (HEIGHT - target.rect.h) // 2
+        target.rect.x += self.dx
+        target.rect.y += self.dy
