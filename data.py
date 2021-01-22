@@ -54,4 +54,7 @@ head_font = os.path.join('data', 'fonts', 'head_font.ttf')
 TILE_WIDTH = TILE_HEIGHT = 50
 tile_images = {
     'floor': load_image('floor.png'), 'wall': load_image('wall.png'),
+    'parquet': load_image('parquet.png'), 'sport': load_image('sport_parquet.png'),
+    'entry_h': load_image('entry_h.png'), 'exit_h': load_image('exit_h.png'),
+    'entry_v': load_image('entry_v.png'), 'exit_v': load_image('exit_v.png')
 }

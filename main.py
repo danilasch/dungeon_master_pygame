@@ -11,7 +11,7 @@ def get_length(vector):  # вычисление длины вектора
     return math.sqrt(vector[0] ** 2 + vector[1] ** 2)
 
 
-# вычисление коростей по осям при
+# вычисление cкоростей по осям при
 # движении в сторону курсора
 def calculate_motion(start_pos, final_pos, speed):
     x1, y1, = start_pos
@@ -33,6 +33,9 @@ def main():
                 if pygame.mouse.get_pos() != game.hero.get_position():
                     game.dx, game.dy = calculate_motion(
                         game.hero.get_position(), pygame.mouse.get_pos(), game.hero.speed)
+            # комната открывается ("зачищается" при нажатии ПКМ)
+            if event.type == pygame.MOUSEBUTTONDOWN and game.in_room and event.button == 3:
+                game.open_doors()
 
             if event.type == pygame.QUIT:
                 sys.exit()
