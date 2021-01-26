@@ -44,7 +44,7 @@ inactive_btn = load_image('inactive_button.png')
 active_btn = load_image('active_button.png')
 inactive_box = load_image('inactive_checkbox.png')
 active_box = load_image('active_checkbox.png')
-background = load_image('background.jpg')
+background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
 main_cursor = os.path.join('data', 'pics', 'cursor.png')
 
 # fonts
