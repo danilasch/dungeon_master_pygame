@@ -1,5 +1,6 @@
 from data import *
 import random
+import math
 
 
 def change_exits(tiles, coord, size, orientation):
@@ -213,8 +214,17 @@ class Game:  # служебный класс игры
 
     def move_hero(self):
         x, y = self.hero.get_position()
-        x += self.dx
-        y += self.dy
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            y -= self.hero.speed
+        if keys[pygame.K_s]:
+            y += self.hero.speed
+        if keys[pygame.K_a]:
+            x -= self.hero.speed
+        if keys[pygame.K_d]:
+            x += self.hero.speed
+            
 
         # герой не сможет зайти за границы borders
         if not pygame.sprite.spritecollideany(Hero((x, y)), borders):

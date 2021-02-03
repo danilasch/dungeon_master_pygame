@@ -28,11 +28,6 @@ def main():
     running = True
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEMOTION:
-                # при движении мыши пересчитывается траектория движения персонажа
-                if pygame.mouse.get_pos() != game.hero.get_position():
-                    game.dx, game.dy = calculate_motion(
-                        game.hero.get_position(), pygame.mouse.get_pos(), game.hero.speed)
             # комната открывается ("зачищается" при нажатии ПКМ)
             if event.type == pygame.MOUSEBUTTONDOWN and game.in_room and event.button == 3:
                 game.open_doors()
@@ -43,8 +38,7 @@ def main():
         screen.fill(pygame.Color('black'))
         game.render(screen)
 
-        if pygame.mouse.get_pos() != game.hero.get_position():
-            game.move_hero()  # передвижение героя в сторону курсора
+        game.move_hero()  # передвижение героя
 
         if pygame.mouse.get_focused():  # применение изменённого курсора
             screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
