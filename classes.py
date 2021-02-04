@@ -216,15 +216,26 @@ class Game:  # служебный класс игры
         x, y = self.hero.get_position()
 
         keys = pygame.key.get_pressed()
+        dx, dy = 0, 0
         if keys[pygame.K_w]:
-            y -= self.hero.speed
+            dy -= self.hero.speed
         if keys[pygame.K_s]:
-            y += self.hero.speed
+            dy += self.hero.speed
         if keys[pygame.K_a]:
-            x -= self.hero.speed
+            if not dy:
+                dx -= self.hero.speed
+            else:
+                dx -= self.hero.speed // 1.41
+                dy //= 1.41
         if keys[pygame.K_d]:
-            x += self.hero.speed
-            
+            if not dy:
+                dx += self.hero.speed
+            else:
+                dx += self.hero.speed // 1.41
+                dy //= 1.41
+
+        x += dx
+        y += dy
 
         # герой не сможет зайти за границы borders
         if not pygame.sprite.spritecollideany(Hero((x, y)), borders):
