@@ -41,10 +41,14 @@ def change_enemies(tiles):
 
 
 ENEMY_DELAY = 500
-ENEMY_EVENT_TYPE = pygame.USEREVENT
+ENEMY_EVENT_TYPE = pygame.USEREVENT + 1
 MAX_HEALTH = 10
 MAX_DEFENCE = 5
 MAX_MANA = 100
+HERO_GET_ARMOR = pygame.USEREVENT + 1
+HERO_GET_MANA = pygame.USEREVENT + 1
+ARMOR_DELAY = 20000
+MANA_DELAY = 10000
 entries = pygame.sprite.Group()
 current_entries = pygame.sprite.Group()
 doors = pygame.sprite.Group()
@@ -289,6 +293,8 @@ class Game:  # служебный класс игры
         self.in_room = False
         self.doors_open = False
         pygame.time.set_timer(ENEMY_EVENT_TYPE, ENEMY_DELAY)
+        pygame.time.set_timer(HERO_GET_ARMOR, ARMOR_DELAY)
+        pygame.time.set_timer(HERO_GET_MANA, MANA_DELAY)
 
     def render(self, screen):
         self.map.render()
@@ -303,6 +309,7 @@ class Game:  # служебный класс игры
         points_rect.width = self.hero.health / MAX_HEALTH * frame_rect.width
         pygame.draw.rect(screen, pygame.Color("#fe0000"), points_rect)
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
+        print_text(f'{self.hero.health}/{MAX_HEALTH}', 70, 11, font_size=25)
 
         screen.blit(interface_images['defence'], (5, 45))
         frame_rect.y += 40
@@ -310,6 +317,7 @@ class Game:  # служебный класс игры
         points_rect.width = self.hero.defence / MAX_DEFENCE * frame_rect.width
         pygame.draw.rect(screen, pygame.Color("#c3c3c3"), points_rect)
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
+        print_text(f'{self.hero.defence}/{MAX_DEFENCE}', 70, 51, font_size=25)
 
         screen.blit(interface_images['mana'], (5, 85))
         frame_rect.y += 40
@@ -317,6 +325,7 @@ class Game:  # служебный класс игры
         points_rect.width = self.hero.mana / MAX_MANA * frame_rect.width
         pygame.draw.rect(screen, pygame.Color("#2196f3"), points_rect)
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
+        print_text(f'{self.hero.mana}/{MAX_MANA}', 70, 91, font_size=25)
 
     def move_hero(self):
         keys = pygame.key.get_pressed()

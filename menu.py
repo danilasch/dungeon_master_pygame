@@ -10,11 +10,6 @@ pygame.init()
 
 # Размещение текста на экране
 # x и y - координаты от левого верхнего угла, выраженные в процентах
-def print_text(message, x, y, font_color=(255, 255, 255), font_type=main_font, font_size=30):
-    font_size = round(WIDTH / (1920 / font_size))  # Адаптация шрифта под ширину окна
-    font_type = pygame.font.Font(font_type, font_size)
-    text = font_type.render(message, True, font_color)
-    screen.blit(text, (x, y))
 
 
 def get_message_size(message, font_type, font_size):

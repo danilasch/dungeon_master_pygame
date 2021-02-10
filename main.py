@@ -38,6 +38,15 @@ def main():
                 for enemy in current_enemies:
                     enemy.go_to(position)
 
+            if event.type == HERO_GET_ARMOR:
+                if game.hero.defence != MAX_DEFENCE:
+                    game.hero.defence += 1
+            if event.type == HERO_GET_MANA:
+                if game.hero.mana + 5 < MAX_MANA:
+                    game.hero.mana += 5
+                else:
+                    game.hero.mana = MAX_MANA
+
             if event.type == pygame.QUIT:
                 sys.exit()
 
