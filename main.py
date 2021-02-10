@@ -33,7 +33,7 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN and game.in_room and event.button == 3:
                 game.open_doors()
 
-            if event.type == ENEMY_EVENT_TYPE:
+            if game.in_room and event.type == ENEMY_EVENT_TYPE:
                 position = game.hero.get_position()
                 for enemy in current_enemies:
                     enemy.go_to(position)

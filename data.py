@@ -67,3 +67,8 @@ wall_images = {
     'entry_v1': load_image('entry_v1.png'), 'entry_v2': load_image('entry_v2.png'),
     'parquet': load_image('long_parquet.png')
 }
+
+interface_images = {
+    'health': load_image('health.png'), 'defence': load_image('shield.png'),
+    'mana': load_image('mana.png')
+}

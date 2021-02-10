@@ -42,13 +42,17 @@ def change_enemies(tiles):
 
 ENEMY_DELAY = 500
 ENEMY_EVENT_TYPE = pygame.USEREVENT
+MAX_HEALTH = 10
+MAX_DEFENCE = 5
+MAX_MANA = 100
 entries = pygame.sprite.Group()
 current_entries = pygame.sprite.Group()
 doors = pygame.sprite.Group()
 current_doors = pygame.sprite.Group()
 exits = pygame.sprite.Group()
 borders = pygame.sprite.Group()
-enemies = current_enemies = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
+current_enemies = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -211,6 +215,9 @@ class Hero(BaseEntity):
         super().__init__(position)
         x, y = position
         self.speed = 5
+        self.health = MAX_HEALTH
+        self.defence = MAX_DEFENCE
+        self.mana = MAX_MANA
 
         # Rect для отрисовки и улавливания снарядов противников
         self.body_rect = pygame.Rect(x, y - self.radius, self.radius, 2 * self.radius)
@@ -229,32 +236,33 @@ class BaseEnemy(BaseEntity):
         self.dx, self.dy = 0, 0
         self.delay = 500
         self.steps = 0
+        self.isalive = True
 
         # Rect для отрисовки и улавливания снарядов противников
         self.body_rect = pygame.Rect(x, y - self.radius, self.radius, 2 * self.radius)
 
     def move(self):
-        if self.steps:
+        if self.steps and self.isalive:
             x, y = self.get_position()
             x += self.dx
             y += self.dy
             if not pygame.sprite.spritecollideany(BaseEntity((x, y)), borders):
-                print(1)
                 self.steps -= 1
                 self.rect.center = x, y
                 self.body_rect.center = x, y
 
     def go_to(self, position):
-        x1, y1, = self.rect.center
-        x2, y2 = position
-        vector = (x2 - x1, y2 - y1)
-        length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
-        if length != 0:
-            self.dx, self.dy, self.steps = \
-                self.speed * vector[0] / length,\
-                self.speed * vector[1] / length, length // self.speed
-        else:
-            self.steps = 0
+        if self.isalive:
+            x1, y1, = self.rect.center
+            x2, y2 = position
+            vector = (x2 - x1, y2 - y1)
+            length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+            if length != 0:
+                self.dx, self.dy, self.steps = \
+                    self.speed * vector[0] / length,\
+                    self.speed * vector[1] / length, length // self.speed
+            else:
+                self.steps = 0
 
     def attack(self, position):
         pass
@@ -266,6 +274,10 @@ class BaseEnemy(BaseEntity):
         self.body_rect.x += camera.dx
         self.body_rect.y += camera.dy
         camera.apply(self)
+
+    def delete(self):
+        self.isalive = False
+        self.body_rect.y += self.body_rect.h // 2
 
 
 class Game:  # служебный класс игры
@@ -283,6 +295,28 @@ class Game:  # служебный класс игры
         self.hero.render(screen)
         for enemy in current_enemies:
             enemy.render(screen)
+
+        frame_rect = pygame.rect.Rect(40, 5, 200, 33)
+        points_rect = frame_rect.copy()
+
+        screen.blit(interface_images['health'], (5, 5))
+        points_rect.width = self.hero.health / MAX_HEALTH * frame_rect.width
+        pygame.draw.rect(screen, pygame.Color("#fe0000"), points_rect)
+        pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
+
+        screen.blit(interface_images['defence'], (5, 45))
+        frame_rect.y += 40
+        points_rect.y += 40
+        points_rect.width = self.hero.defence / MAX_DEFENCE * frame_rect.width
+        pygame.draw.rect(screen, pygame.Color("#c3c3c3"), points_rect)
+        pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
+
+        screen.blit(interface_images['mana'], (5, 85))
+        frame_rect.y += 40
+        points_rect.y += 40
+        points_rect.width = self.hero.mana / MAX_MANA * frame_rect.width
+        pygame.draw.rect(screen, pygame.Color("#2196f3"), points_rect)
+        pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
 
     def move_hero(self):
         keys = pygame.key.get_pressed()
@@ -369,8 +403,10 @@ class Game:  # служебный класс игры
         door_open.play()
         borders.remove(*current_doors)
         self.change_doors_images('o', self.map.map[-3].entry, current_doors)
-
+        for enemy in current_enemies:
+            enemy.delete()
         current_doors.remove(*current_doors)
+        current_enemies.remove(*current_enemies)
         self.in_room = False
 
     def move_enemies(self):
