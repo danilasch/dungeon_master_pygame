@@ -35,12 +35,20 @@ def change_doors(tiles):
     current_doors.add(*tiles)
 
 
+def change_enemies(tiles):
+    global current_enemies
+    current_enemies.add(*tiles)
+
+
+ENEMY_DELAY = 500
+ENEMY_EVENT_TYPE = pygame.USEREVENT
 entries = pygame.sprite.Group()
 current_entries = pygame.sprite.Group()
 doors = pygame.sprite.Group()
 current_doors = pygame.sprite.Group()
 exits = pygame.sprite.Group()
 borders = pygame.sprite.Group()
+enemies = current_enemies = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -116,6 +124,10 @@ class Room(pygame.sprite.Group):
                 elif self.map[j][i] == 'w':
                     Wall('classwall', x, y, self, borders)
 
+                elif self.map[j][i] == '+':
+                    Tile('sport', x, y, self)
+                    enemies.add(BaseEnemy((x, y), 10, 1))
+
                 elif self.map[j][i] == '0':
                     Tile('empty', x, y, self)
                 x += TILE_WIDTH
@@ -127,7 +139,7 @@ class Room(pygame.sprite.Group):
                (0 < self.y < HEIGHT or 0 < self.y + self.height * TILE_HEIGHT < HEIGHT or
                 self.y <= 0 and self.y + self.height * TILE_HEIGHT >= HEIGHT)
 
-    def move(self, camera):
+    def apply_camera(self, camera):
         # передвижение комнаты относительно героя и смещение камеры
         self.x += camera.dx
         self.y += camera.dy
@@ -161,6 +173,7 @@ class Map:
         room = self.map[-1]
         if direction == 0:  # новая комната и коридор к ней справа
             change_exits(exits, room.x, room.width * TILE_WIDTH, 'h')
+            change_enemies(enemies)
             x, y = room.x, room.y
             width, height = room.width, room.height
             corridor_pos = x + width * TILE_WIDTH, y + (height // 2 - 1) * TILE_HEIGHT
@@ -180,23 +193,79 @@ class Map:
             self.map.append(Room('classroom.txt', room_pos, 'v'))
 
 
-class Hero(pygame.sprite.Sprite):
+class BaseEntity(pygame.sprite.Sprite):
+
     def __init__(self, position):
         super().__init__()
+        self.radius = TILE_WIDTH * 7 // 10
         x, y = position
-        self.radius = TILE_WIDTH // 2
-        x -= self.radius // 2
-        y -= self.radius
-        self.speed = 5
-        self.rect = pygame.Rect(x, y, self.radius, self.radius)
+        # Rect для взаимодействия объекта со стенами
+        self.rect = pygame.Rect(x, y + self.radius // 2, self.radius, self.radius // 2)
 
     def get_position(self):
         return self.rect.center
 
+
+class Hero(BaseEntity):
+    def __init__(self, position):
+        super().__init__(position)
+        x, y = position
+        self.speed = 5
+
+        # Rect для отрисовки и улавливания снарядов противников
+        self.body_rect = pygame.Rect(x, y - self.radius, self.radius, 2 * self.radius)
+
     def render(self, screen):
-        rect = pygame.Rect(self.rect.x, self.rect.y - self.radius * 2,
-                           self.radius, self.radius * 2)
-        pygame.draw.rect(screen, (255, 255, 255), rect)
+        pygame.draw.rect(screen, (255, 255, 255), self.body_rect)
+
+
+class BaseEnemy(BaseEntity):
+    def __init__(self, position, health, power):
+        super().__init__(position)
+        x, y = position
+        self.health = health
+        self.power = power
+        self.speed = 4
+        self.dx, self.dy = 0, 0
+        self.delay = 500
+        self.steps = 0
+
+        # Rect для отрисовки и улавливания снарядов противников
+        self.body_rect = pygame.Rect(x, y - self.radius, self.radius, 2 * self.radius)
+
+    def move(self):
+        if self.steps:
+            x, y = self.get_position()
+            x += self.dx
+            y += self.dy
+            if not pygame.sprite.spritecollideany(BaseEntity((x, y)), borders):
+                print(1)
+                self.steps -= 1
+                self.rect.center = x, y
+                self.body_rect.center = x, y
+
+    def go_to(self, position):
+        x1, y1, = self.rect.center
+        x2, y2 = position
+        vector = (x2 - x1, y2 - y1)
+        length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+        if length != 0:
+            self.dx, self.dy, self.steps = \
+                self.speed * vector[0] / length,\
+                self.speed * vector[1] / length, length // self.speed
+        else:
+            self.steps = 0
+
+    def attack(self, position):
+        pass
+
+    def render(self, screen):
+        pygame.draw.rect(screen, (100, 100, 100), self.body_rect)
+
+    def apply_camera(self, camera):
+        self.body_rect.x += camera.dx
+        self.body_rect.y += camera.dy
+        camera.apply(self)
 
 
 class Game:  # служебный класс игры
@@ -207,62 +276,69 @@ class Game:  # служебный класс игры
         self.dx, self.dy = 0, 0
         self.in_room = False
         self.doors_open = False
+        pygame.time.set_timer(ENEMY_EVENT_TYPE, ENEMY_DELAY)
 
     def render(self, screen):
         self.map.render()
         self.hero.render(screen)
+        for enemy in current_enemies:
+            enemy.render(screen)
 
     def move_hero(self):
-        x, y = self.hero.get_position()
-
         keys = pygame.key.get_pressed()
-        dx, dy = 0, 0
-        if keys[pygame.K_w]:
-            dy -= self.hero.speed
-        if keys[pygame.K_s]:
-            dy += self.hero.speed
-        if keys[pygame.K_a]:
-            if not dy:
-                dx -= self.hero.speed
-            else:
-                dx -= self.hero.speed // 1.41
-                dy //= 1.41
-        if keys[pygame.K_d]:
-            if not dy:
-                dx += self.hero.speed
-            else:
-                dx += self.hero.speed // 1.41
-                dy //= 1.41
 
-        x += dx
-        y += dy
+        if any(keys):
+            x, y = self.hero.get_position()
+            dx, dy = 0, 0
+            if keys[pygame.K_w]:
+                dy -= self.hero.speed
+            if keys[pygame.K_s]:
+                dy += self.hero.speed
+            if keys[pygame.K_a]:
+                if not dy:
+                    dx -= self.hero.speed
+                else:
+                    dx -= self.hero.speed // 1.41
+                    dy //= 1.41
+            if keys[pygame.K_d]:
+                if not dy:
+                    dx += self.hero.speed
+                else:
+                    dx += self.hero.speed // 1.41
+                    dy //= 1.41
 
-        # герой не сможет зайти за границы borders
-        if not pygame.sprite.spritecollideany(Hero((x, y)), borders):
-            self.hero.rect.center = x, y
-            self.camera.update(self.hero)
-            for room in self.map.map:
-                room.move(self.camera)
+            x += dx
+            y += dy
 
-        # когда герой входит в какую-нибудь из комнат, комната
-        # закрывается, пока её не зачистят
-        if not self.in_room and pygame.sprite.spritecollideany(self.hero, entries):
-            entries.remove(*entries)
-            self.in_room = True
-            self.lock_doors()
+            # герой не сможет зайти за границы borders
+            if not pygame.sprite.spritecollideany(BaseEntity((x, y)), borders):
+                self.hero.rect.center = x, y
+                self.camera.update(self.hero)
+                for room in self.map.map:
+                    room.apply_camera(self.camera)
+                for enemy in enemies:
+                    enemy.apply_camera(self.camera)
+                    enemy.go_to((x, y))
 
-        #  открытие (скрытие) дверей при контакте с ними
-        if not self.doors_open and pygame.sprite.spritecollideany(self.hero, doors):
-            self.doors_open = True
-            door_open.play()
-            self.change_doors_images('o', self.map.map[-1].entry, doors)
+            # когда герой входит в какую-нибудь из комнат, комната
+            # закрывается, пока её не зачистят
+            if not self.in_room and pygame.sprite.spritecollideany(self.hero, entries):
+                entries.remove(*entries)
+                self.in_room = True
+                self.lock_doors()
 
-        #  возвращение дверей в закрытое положение
-        elif self.doors_open and not pygame.sprite.spritecollideany(self.hero, doors):
-            self.doors_open = False
-            door_close.play()
-            if not self.in_room:
-                self.change_doors_images('c', self.map.map[-1].entry, doors)
+            #  открытие (скрытие) дверей при контакте с ними
+            if not self.doors_open and pygame.sprite.spritecollideany(self.hero, doors):
+                self.doors_open = True
+                door_open.play()
+                self.change_doors_images('o', self.map.map[-1].entry, doors)
+
+            #  возвращение дверей в закрытое положение
+            elif self.doors_open and not pygame.sprite.spritecollideany(self.hero, doors):
+                self.doors_open = False
+                door_close.play()
+                if not self.in_room:
+                    self.change_doors_images('c', self.map.map[-1].entry, doors)
 
     def lock_doors(self):
         door_close.play()
@@ -296,6 +372,10 @@ class Game:  # служебный класс игры
 
         current_doors.remove(*current_doors)
         self.in_room = False
+
+    def move_enemies(self):
+        for enemy in current_enemies:
+            enemy.move()
 
 
 class Camera:
