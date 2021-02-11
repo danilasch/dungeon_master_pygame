@@ -1,5 +1,5 @@
 import math
-from menu import *
+import menu
 from classes import *
 
 pygame.init()
@@ -31,6 +31,10 @@ def main():
             # комната открывается ("зачищается" при нажатии ПКМ)
             if event.type == pygame.MOUSEBUTTONDOWN and game.in_room and event.button == 3:
                 game.open_doors()
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    menu.pause()
 
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -50,4 +54,4 @@ def main():
 
 
 if __name__ == '__main__':
-    menu()
+    menu.menu()
