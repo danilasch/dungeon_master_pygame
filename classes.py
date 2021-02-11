@@ -57,6 +57,7 @@ exits = pygame.sprite.Group()
 borders = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 current_enemies = pygame.sprite.Group()
+shells = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -229,6 +230,15 @@ class Hero(BaseEntity):
     def render(self, screen):
         pygame.draw.rect(screen, (255, 255, 255), self.body_rect)
 
+    def attack(self):
+        x1, y1, = self.rect.center
+        x2, y2 = pygame.mouse.get_pos()
+        vector = (x2 - x1, y2 - y1)
+        length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+        shells.add(Shell(self.rect.center, vector, length, True, 2))
+        if length != 0:
+            self.mana -= 1
+
 
 class BaseEnemy(BaseEntity):
     def __init__(self, position, health, power):
@@ -240,13 +250,13 @@ class BaseEnemy(BaseEntity):
         self.dx, self.dy = 0, 0
         self.delay = 500
         self.steps = 0
-        self.isalive = True
+        self.is_alive = True
 
         # Rect для отрисовки и улавливания снарядов противников
         self.body_rect = pygame.Rect(x, y - self.radius, self.radius, 2 * self.radius)
 
     def move(self):
-        if self.steps and self.isalive:
+        if self.steps and self.is_alive:
             x, y = self.get_position()
             x += self.dx
             y += self.dy
@@ -256,7 +266,7 @@ class BaseEnemy(BaseEntity):
                 self.body_rect.center = x, y
 
     def go_to(self, position):
-        if self.isalive:
+        if self.is_alive:
             x1, y1, = self.rect.center
             x2, y2 = position
             vector = (x2 - x1, y2 - y1)
@@ -280,7 +290,7 @@ class BaseEnemy(BaseEntity):
         camera.apply(self)
 
     def delete(self):
-        self.isalive = False
+        self.is_alive = False
         self.body_rect.y += self.body_rect.h // 2
 
 
@@ -301,6 +311,8 @@ class Game:  # служебный класс игры
         self.hero.render(screen)
         for enemy in current_enemies:
             enemy.render(screen)
+        for shell in shells:
+            shell.render(screen)
 
         frame_rect = pygame.rect.Rect(40, 5, 200, 33)
         points_rect = frame_rect.copy()
@@ -362,6 +374,8 @@ class Game:  # служебный класс игры
                 for enemy in enemies:
                     enemy.apply_camera(self.camera)
                     enemy.go_to((x, y))
+                for shell in shells:
+                    self.camera.apply(shell)
 
             # когда герой входит в какую-нибудь из комнат, комната
             # закрывается, пока её не зачистят
@@ -421,6 +435,43 @@ class Game:  # служебный класс игры
     def move_enemies(self):
         for enemy in current_enemies:
             enemy.move()
+
+    def move_shells(self):
+        for shell in shells:
+            shell.move()
+
+
+class Shell(pygame.sprite.Sprite):
+    def __init__(self, pos, vector, length, from_hero, damage):
+        super().__init__()
+        self.speed = 7
+        self.damage = damage
+        self.dx = self.speed * vector[0] / length
+        self.dy = self.speed * vector[1] / length
+        x, y = pos
+        self.from_hero = from_hero
+        self.rect = pygame.rect.Rect(x, y, 10, 10)
+
+    def render(self, screen):
+        pygame.draw.circle(screen, pygame.Color("#2196f3"),
+                           self.rect.center, self.rect.width // 2)
+
+    def move(self):
+        x, y = self.rect.center
+        x += self.dx
+        y += self.dy
+        for enemy in current_enemies:
+            if pygame.sprite.collide_circle(self, enemy):
+                if enemy.health > self.damage:
+                    enemy.health -= self.damage
+                else:
+                    enemy.delete()
+                shells.remove(self)
+        if pygame.sprite.spritecollideany(self, borders):
+            shells.remove(self)
+
+        else:
+            self.rect.center = x, y
 
 
 class Camera:
