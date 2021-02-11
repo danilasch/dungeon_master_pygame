@@ -43,7 +43,7 @@ def change_enemies(tiles):
 ENEMY_DELAY = 500
 ENEMY_EVENT_TYPE = pygame.USEREVENT + 1
 MAX_HEALTH = 10
-MAX_DEFENCE = 5
+MAX_ARMOR = 5
 MAX_MANA = 100
 HERO_GET_ARMOR = pygame.USEREVENT + 1
 HERO_GET_MANA = pygame.USEREVENT + 1
@@ -133,7 +133,7 @@ class Room(pygame.sprite.Group):
                     Wall('classwall', x, y, self, borders)
 
                 elif self.map[j][i] == '+':
-                    Tile('sport', x, y, self)
+                    Tile('parquet', x, y, self)
                     enemies.add(BaseEnemy((x, y), 10, 1))
 
                 elif self.map[j][i] == '0':
@@ -220,7 +220,7 @@ class Hero(BaseEntity):
         x, y = position
         self.speed = 5
         self.health = MAX_HEALTH
-        self.defence = MAX_DEFENCE
+        self.armor = MAX_ARMOR
         self.mana = MAX_MANA
 
         # Rect для отрисовки и улавливания снарядов противников
@@ -311,13 +311,13 @@ class Game:  # служебный класс игры
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
         print_text(f'{self.hero.health}/{MAX_HEALTH}', 70, 11, font_size=25)
 
-        screen.blit(interface_images['defence'], (5, 45))
+        screen.blit(interface_images['armor'], (5, 45))
         frame_rect.y += 40
         points_rect.y += 40
-        points_rect.width = self.hero.defence / MAX_DEFENCE * frame_rect.width
+        points_rect.width = self.hero.armor / MAX_ARMOR * frame_rect.width
         pygame.draw.rect(screen, pygame.Color("#c3c3c3"), points_rect)
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
-        print_text(f'{self.hero.defence}/{MAX_DEFENCE}', 70, 51, font_size=25)
+        print_text(f'{self.hero.armor}/{MAX_ARMOR}', 70, 51, font_size=25)
 
         screen.blit(interface_images['mana'], (5, 85))
         frame_rect.y += 40

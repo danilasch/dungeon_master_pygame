@@ -76,6 +76,6 @@ wall_images = {
 }
 
 interface_images = {
-    'health': load_image('health.png'), 'defence': load_image('shield.png'),
+    'health': load_image('health.png'), 'armor': load_image('shield.png'),
     'mana': load_image('mana.png')
 }
