@@ -9,7 +9,7 @@ clock = pygame.time.Clock()
 
 # scores
 with open(os.path.join('data', 'statistics.txt'), 'r') as f:
-    data = f.read().split('\n')[1:]
+    data = f.read().split('\n')
     result = {}
     for i in range(len(data)):
         data[i] = data[i].split('=')
