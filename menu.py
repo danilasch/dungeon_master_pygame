@@ -130,6 +130,26 @@ def settings():
         clock.tick(FPS)
     pygame.quit()
 
+def achievements():
+    show = True
+    while show:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                show = False
+        
+        screen.fill((100, 100, 100))
+
+        print_text(f'Счёт предыдущей игры: {result["last-score"]}', HALF_WIDTH - get_message_size(f'Счёт предыдущей игры: {result["last-score"]}', main_font, 60)[0] // 2, 200, font_type=main_font, font_size=60)
+        print_text(f'Максимальное кол-во очков: {result["record-score"]}', HALF_WIDTH - get_message_size(f'Максимальное кол-во очков: {result["record-score"]}', main_font, 60)[0] // 2, 300, font_type=main_font, font_size=60)
+        print_text(f'Общее количество убийств: {result["total-kills"]}', HALF_WIDTH - get_message_size(f'Общее количество убийств: {result["total-kills"]}', main_font, 60)[0] // 2, 400, font_type=main_font, font_size=60)
+
+        if pygame.mouse.get_focused():
+            screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
+
+            pygame.display.flip()
+            clock.tick(FPS)
+    pygame.quit()
+
 
 def menu():
     pygame.mixer.Sound.play(background_music, loops=-1)
@@ -137,6 +157,7 @@ def menu():
     start_btn = Button(17, 17, action=main)
     settings_btn = Button(17, 17, action=settings)
     quit_btn = Button(17, 17, action=pygame.quit)
+    achievements_btn = Button(6.5, 12, small_inactive_btn, small_active_btn, achievements)
 
     show = True
     while show:
@@ -149,6 +170,7 @@ def menu():
         start_btn.draw(50, 50, 'Играть', 40)
         settings_btn.draw(50, 68, 'Настройки', 40)
         quit_btn.draw(50, 86, 'Выход', 40)
+        achievements_btn.draw(95, 90, 'Достижения', 15)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
