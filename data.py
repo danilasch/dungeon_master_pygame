@@ -75,6 +75,8 @@ door_close = sound('door_close.wav', 1)
 # pics
 inactive_btn = load_image('inactive_button.png')
 active_btn = load_image('active_button.png')
+small_inactive_btn = load_image('small_inactive_button.png')
+small_active_btn = load_image('small_active_button.png')
 inactive_box = load_image('inactive_checkbox.png')
 active_box = load_image('active_checkbox.png')
 background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
