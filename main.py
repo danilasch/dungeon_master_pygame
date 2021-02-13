@@ -62,7 +62,7 @@ def main():
 
                 with open(os.path.join('data', 'statistics.txt'), 'w') as f:
                     f.write(f'last-score={current_score}\n')
-                    for key, value in result.items():
+                    for key, value in list(result.items())[1:]:
                         if key == list(result.keys())[-1]:
                             f.write(f'{key}={value}')
                         else:
