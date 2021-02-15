@@ -36,17 +36,19 @@ def main():
                 elif game.in_room and event.button == 3:
                     game.open_doors()
 
+            if event.type == OPEN_DOORS_EVENT.type:
+                game.open_doors()
+
             if game.in_room and event.type == ENEMY_EVENT_TYPE:
-                position = game.hero.get_position()
+                hero = game.hero
                 for enemy in current_enemies:
-                    enemy.go_to(position)
+                    enemy.action(hero)
 
             if event.type == HERO_GET_ARMOR:
                 if game.hero.armor != MAX_ARMOR:
                     game.hero.armor += 1
 
             if event.type == HERO_GET_MANA:
-                print(1)
                 if game.hero.mana + 5 < MAX_MANA:
                     game.hero.mana += 5
                 else:
@@ -57,10 +59,6 @@ def main():
 
         screen.fill(pygame.Color('black'))
         game.render(screen)
-
-        game.move_hero()  # передвижение героя
-        game.move_enemies()
-        game.move_shells()
 
         if pygame.mouse.get_focused():  # применение изменённого курсора
             screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
