@@ -7,6 +7,10 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+# fonts
+main_font = os.path.join('data', 'fonts', 'main_font.ttf')
+head_font = os.path.join('data', 'fonts', 'head_font.ttf')
+
 
 def change_cursor(cursor_image):
     cursor_image = pygame.image.load(cursor_image).convert_alpha()
@@ -33,6 +37,13 @@ def sound(name, volume=1):
     return result
 
 
+def print_text(message, x, y, font_color=(255, 255, 255), font_type=main_font, font_size=30):
+    font_size = round(WIDTH / (1920 / font_size))  # Адаптация шрифта под ширину окна
+    font_type = pygame.font.Font(font_type, font_size)
+    text = font_type.render(message, True, font_color)
+    screen.blit(text, (x, y))
+
+
 # sounds
 button_sound = sound('button.wav', 0.5)
 background_music = sound('background.wav', 0.1)
@@ -46,10 +57,6 @@ inactive_box = load_image('inactive_checkbox.png')
 active_box = load_image('active_checkbox.png')
 background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
 main_cursor = os.path.join('data', 'pics', 'cursor.png')
-
-# fonts
-main_font = os.path.join('data', 'fonts', 'main_font.ttf')
-head_font = os.path.join('data', 'fonts', 'head_font.ttf')
 
 # tiles
 TILE_WIDTH = TILE_HEIGHT = 50
@@ -66,4 +73,9 @@ wall_images = {
     'classwall': load_image('classwall.png'), 'entry_v0': load_image('entry_v0.png'),
     'entry_v1': load_image('entry_v1.png'), 'entry_v2': load_image('entry_v2.png'),
     'parquet': load_image('long_parquet.png')
+}
+
+interface_images = {
+    'health': load_image('health.png'), 'armor': load_image('shield.png'),
+    'mana': load_image('mana.png')
 }
