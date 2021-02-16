@@ -8,10 +8,6 @@ from main import screen, clock, main, change_cursor
 pygame.init()
 
 
-# Размещение текста на экране
-# x и y - координаты от левого верхнего угла, выраженные в процентах
-
-
 class Button:
     def __init__(self, width, height, inactive=inactive_btn, active=active_btn,
                  action=None):  # width, height - велечины, выраженные в процентах
@@ -26,26 +22,34 @@ class Button:
     def draw(self, x, y, message, font_size=30):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
-        x, y = round(x / 100 * WIDTH) - round(self.width / 2), round(y / 100 * HEIGHT) - round(
+        self.x, self.y = round(x / 100 * WIDTH) - round(self.width / 2), round(y / 100 * HEIGHT) - round(
             self.height / 2)
 
         # Проверка курсора на кнопке
-        if x < mouse[0] < x + self.width and y < mouse[1] < y + self.height:
-            screen.blit(self.active, (x, y))
+        if self.x < mouse[0] < self.x + self.width and self.y < mouse[1] < self.y + self.height:
+            screen.blit(self.active, (self.x, self.y))
             if click[0] == 1:
                 pygame.mixer.Sound.play(button_sound)
                 pygame.time.delay(300)
                 if self.action is not None:
                     self.action()
         else:
-            screen.blit(self.inactive, (x, y))
+            screen.blit(self.inactive, (self.x, self.y))
 
         # Размер сообщения
         message_width, message_height = get_message_size(message, main_font, font_size)
 
         # Перенос сообщения на экран
-        print_text(message, x + self.width // 2 - message_width // 2,
-                   y + self.height // 2 - message_height // 2, font_size=font_size)
+        print_text(message, self.x + self.width // 2 - message_width // 2,
+                   self.y + self.height // 2 - message_height // 2, font_size=font_size)
+        
+    def is_clicked(self):
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        
+        if self.x < mouse[0] < self.x + self.width and self.y < mouse[1] < self.y + self.height:
+            if click[0] == 1:
+                return True
 
 
 class Checkbox:
@@ -111,31 +115,36 @@ def sounds_off(off):
 def settings():
     off_music = Checkbox(10, action=music_off, isactive=False)
     off_sound = Checkbox(10, action=sounds_off, isactive=False)
+    back_btn = Button(13, 13)
+    back_btn.draw(8, 8, 'Назад')
 
-    preferences = True
-    while preferences:
+    while not back_btn.is_clicked():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                preferences = False
+                sys.exit()
 
         screen.fill((100, 100, 100))
 
-        off_music.draw(10, 15, 'Отключить музыку', 45)
-        off_sound.draw(10, 35, 'Отключить звук', 45)
+        off_music.draw(8, 25, 'Отключить музыку', 45)
+        off_sound.draw(8, 45, 'Отключить звук', 45)
+        back_btn.draw(8, 8, 'Назад')
 
         if pygame.mouse.get_focused():
             screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
 
         pygame.display.flip()
         clock.tick(FPS)
-    pygame.quit()
+    return
+
 
 def achievements():
-    show = True
-    while show:
+    back_btn = Button(13, 13)
+    back_btn.draw(8, 8, 'Назад')
+
+    while not back_btn.is_clicked():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                show = False
+                sys.exit()
         
         screen.fill((100, 100, 100))
 
@@ -143,12 +152,14 @@ def achievements():
         print_text(f'Максимальное кол-во очков: {result["record-score"]}', HALF_WIDTH - get_message_size(f'Максимальное кол-во очков: {result["record-score"]}', main_font, 60)[0] // 2, 300, font_type=main_font, font_size=60)
         print_text(f'Общее количество убийств: {result["total-kills"]}', HALF_WIDTH - get_message_size(f'Общее количество убийств: {result["total-kills"]}', main_font, 60)[0] // 2, 400, font_type=main_font, font_size=60)
 
+        back_btn.draw(8, 8, 'Назад')
+
         if pygame.mouse.get_focused():
             screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
 
             pygame.display.flip()
             clock.tick(FPS)
-    pygame.quit()
+    return
 
 
 def menu():
@@ -156,7 +167,7 @@ def menu():
 
     start_btn = Button(17, 17, action=main)
     settings_btn = Button(17, 17, action=settings)
-    quit_btn = Button(17, 17, action=pygame.quit)
+    quit_btn = Button(17, 17, action=sys.exit)
     achievements_btn = Button(6.5, 12, small_inactive_btn, small_active_btn, achievements)
 
     show = True

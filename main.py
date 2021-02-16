@@ -1,7 +1,8 @@
 import math
 from menu import *
-from data import *
+from data import result
 from classes import *
+import classes
 
 
 pygame.init()
@@ -24,8 +25,6 @@ def calculate_motion(start_pos, final_pos, speed):
 
 
 def main():
-    global current_score
-
     background_music.set_volume(0)
     game = Game(Map(), Hero((WIDTH // 2, HEIGHT // 2)), Camera())
     running = True
@@ -38,44 +37,39 @@ def main():
 
                 elif game.in_room and event.button == 3:
                     game.open_doors()
-                    current_score += 1
+
+            if event.type == OPEN_DOORS_EVENT.type:
+                game.open_doors()
 
             if game.in_room and event.type == ENEMY_EVENT_TYPE:
-                position = game.hero.get_position()
+                hero = game.hero
                 for enemy in current_enemies:
-                    enemy.go_to(position)
+                    enemy.action(hero)
 
             if event.type == HERO_GET_ARMOR:
                 if game.hero.armor != MAX_ARMOR:
                     game.hero.armor += 1
 
             if event.type == HERO_GET_MANA:
-                print(1)
                 if game.hero.mana + 5 < MAX_MANA:
                     game.hero.mana += 5
                 else:
                     game.hero.mana = MAX_MANA
 
             if event.type == pygame.QUIT:
-                if current_score > result['record-score']:
-                    result['record-score'] = current_score
+                if classes.current_score > result['record-score']:
+                    result['record-score'] = classes.current_score
 
                 with open(os.path.join('data', 'statistics.txt'), 'w') as f:
-                    f.write(f'last-score={current_score}\n')
-                    for key, value in list(result.items())[1:]:
-                        if key == list(result.keys())[-1]:
-                            f.write(f'{key}={value}')
-                        else:
-                            f.write(f'{key}={value}\n')
+                    f.write(f'last-score={classes.current_score}\n')
+                    f.write(f'record-score={result["record-score"]}\n')
+                    f.write(f'total-kills={classes.total_kills}')
+
 
                 sys.exit()
 
         screen.fill(pygame.Color('black'))
         game.render(screen)
-
-        game.move_hero()  # передвижение героя
-        game.move_enemies()
-        game.move_shells()
 
         if pygame.mouse.get_focused():  # применение изменённого курсора
             screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())

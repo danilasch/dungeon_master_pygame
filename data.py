@@ -19,8 +19,6 @@ current_score = 0
 record_score = result['record-score']
 total_kills = result['total-kills']
 
-
-
 # fonts
 main_font = os.path.join('data', 'fonts', 'main_font.ttf')
 head_font = os.path.join('data', 'fonts', 'head_font.ttf')
