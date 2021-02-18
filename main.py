@@ -8,18 +8,14 @@ pygame.display.set_caption('Dungeon Master')
 pygame.mouse.set_visible(False)
 
 
-def get_length(vector):  # вычисление длины вектора
-    return math.sqrt(vector[0] ** 2 + vector[1] ** 2)
-
-
 # вычисление cкоростей по осям при
 # движении в сторону точки
 def calculate_motion(start_pos, final_pos, speed):
     x1, y1, = start_pos
     x2, y2 = final_pos
-    vector = (x2 - x1, y2 - y1)
-    length = get_length(vector)
-    return speed * vector[0] / length, speed * vector[1] / length
+    x, y = x2 - x1, y2 - y1
+    length = get_length(x, y)
+    return speed * x / length, speed * y / length
 
 
 def main():
@@ -32,9 +28,13 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     game.hero.attack()
-
-                elif game.in_room and event.button == 3:
-                    game.open_doors()
+                elif event.button == 3 and not game.in_room:
+                    x, y = game.hero.rect.center
+                    for potion in potions:
+                        if pygame.mouse.get_pressed(3)[2] and get_length(
+                                potion.rect.center[0] - x, potion.rect.center[1] - y) < 50:
+                            potion.use(game.hero)
+                            break
 
             if event.type == OPEN_DOORS_EVENT.type:
                 game.open_doors()
@@ -49,14 +49,10 @@ def main():
                     enemy.action(hero)
 
             if event.type == HERO_GET_ARMOR:
-                if game.hero.armor != MAX_ARMOR:
-                    game.hero.armor += 1
+                game.hero.add_armor(1)
 
             if event.type == HERO_GET_MANA:
-                if game.hero.mana + 5 < MAX_MANA:
-                    game.hero.mana += 5
-                else:
-                    game.hero.mana = MAX_MANA
+                game.hero.add_mana(5)
 
             if event.type == pygame.QUIT:
                 sys.exit()
