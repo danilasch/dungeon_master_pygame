@@ -79,3 +79,8 @@ interface_images = {
     'health': load_image('health.png'), 'armor': load_image('shield.png'),
     'mana': load_image('mana.png')
 }
+
+object_images = {
+    'closed': load_image('chest_closed.png'), 'open': load_image('chest_open.png'),
+    'health': load_image('health_potion.png'), 'mana': load_image('mana_potion.png')
+}

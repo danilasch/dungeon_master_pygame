@@ -30,6 +30,8 @@ def change_exits(tiles, coord, size, orientation):
     exits.empty()
 
 
+# следующие 2 функции изменяют группы спрайтов
+# при переходе в следующую комнату
 def change_doors(tiles):
     global current_doors
     current_doors.add(*tiles)
@@ -38,6 +40,10 @@ def change_doors(tiles):
 def change_enemies(tiles):
     global current_enemies
     current_enemies.add(*tiles)
+
+
+def get_length(x, y):
+    return math.sqrt(x ** 2 + y ** 2)
 
 
 ENEMY_DELAY = 1000
@@ -59,6 +65,8 @@ borders = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 current_enemies = pygame.sprite.Group()
 shells = pygame.sprite.Group()
+potions = pygame.sprite.Group()
+current_object = None
 
 
 class Tile(pygame.sprite.Sprite):
@@ -68,7 +76,35 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(pos_x, pos_y)
 
 
+class Object(pygame.sprite.Sprite):
+    """Класс объекта, которым может воспользоваться игрок.
+    Объект закреплён за одной из комнат. В данной версии
+    объектами являются сундуки и зелья"""
+    def __init__(self, object_type, pos_x, pos_y, *groups):
+        super().__init__(*groups)
+        self.image = object_images[object_type]
+        self.rect = self.image.get_rect().move(pos_x, pos_y)
+        self.name = object_type
+
+    def open(self, new_image=None):
+        if new_image:
+            self.image = object_images[new_image]
+
+        global current_object
+        current_object = None
+
+    def use(self, hero):
+        if self.name == 'health':
+            hero.heal(random.randint(2, 5))
+        elif self.name == 'mana':
+            hero.add_mana(random.randint(10, 50))
+
+        self.kill()
+
+
 class Wall(pygame.sprite.Sprite):
+    """Класс для стен. Это особые тайлы, которые нужны
+    в чисто декоративных целях. В три раза выше обычных тайлов."""
     def __init__(self, tile_type, pos_x, pos_y, *groups):
         super().__init__(*groups)
         pos_y -= 2 * TILE_HEIGHT
@@ -144,6 +180,12 @@ class Room(pygame.sprite.Group):
 
                 elif self.map[j][i] == '0':
                     Tile('empty', x, y, self)
+
+                elif self.map[j][i] == 'p':
+                    Tile('parquet', x, y, self)
+                    global current_object
+                    current_object = Object('closed', x, y, self)
+
                 x += TILE_WIDTH
             y += TILE_HEIGHT
 
@@ -162,6 +204,7 @@ class Room(pygame.sprite.Group):
 
 
 class Map:
+    """Класс игровой карты. Здесь храниться список комнат."""
     def __init__(self):
         start_height, start_width = 15, 16
         corridor_width = 9
@@ -172,7 +215,7 @@ class Map:
 
         self.map = [Room('start.txt', (x, y)),
                     Room('horizontal.txt', corridor_pos),
-                    Room('classroom.txt', classroom_pos, 'h')]
+                    Room('classroom1.txt', classroom_pos, 'h')]
         # три начальные комнаты
 
     def render(self):
@@ -182,9 +225,10 @@ class Map:
             if room.is_visible():
                 room.draw(screen)
 
-    def update(self):
+    def update(self):  # добавление комнаты
         direction = random.choice((0, 1))
         room = self.map[-1]
+        global current_object
         if direction == 0:  # новая комната и коридор к ней справа
             change_exits(exits, room.x, room.width * TILE_WIDTH, 'h')
             change_enemies(enemies)
@@ -194,7 +238,14 @@ class Map:
             corridor = Room('horizontal.txt', corridor_pos)
             self.map.append(corridor)
             room_pos = corridor_pos[0] + corridor.width * TILE_WIDTH, y
-            self.map.append(Room('classroom.txt', room_pos, 'h'))
+            if current_object is None:
+                self.map.append(Room(
+                    f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
+                    room_pos, 'h'))
+            else:
+                self.map.append(
+                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
+                         room_pos, 'h'))
 
         else:  # новая комната и коридор к ней ниже
             change_exits(exits, room.y, room.height * TILE_HEIGHT, 'v')
@@ -205,11 +256,19 @@ class Map:
             corridor = Room('vertical.txt', corridor_pos)
             self.map.append(corridor)
             room_pos = x, corridor_pos[1] + corridor.height * TILE_HEIGHT
-            self.map.append(Room('classroom.txt', room_pos, 'v'))
+            if current_object is None:
+                self.map.append(
+                    Room(f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
+                         room_pos, 'v'))
+            else:
+                self.map.append(
+                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
+                         room_pos, 'v'))
 
 
 class BaseEntity(pygame.sprite.Sprite):
-
+    """Базовый класс игровой сущности. От него наследуются
+    классы игрока и врагов"""
     def __init__(self, position):
         super().__init__()
         self.radius = TILE_WIDTH * 7 // 10
@@ -238,14 +297,44 @@ class Hero(BaseEntity):
         pygame.draw.rect(screen, (0, 0, 0), self.rect)
 
     def attack(self):
+        # метод создаёт снаряд и определяет направление его движения
         if self.mana:
             x1, y1, = self.rect.center
             x2, y2 = pygame.mouse.get_pos()
             vector = (x2 - x1, y2 - y1)
-            length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+            length = get_length(*vector)
             shells.add(Shell(self.rect.center, vector, length, True, 2))
             if length != 0:
                 self.mana -= 1
+
+    def heal(self, value):
+        if self.health + value > MAX_HEALTH:
+            self.health = MAX_HEALTH
+        else:
+            self.health += value
+
+    def hit(self, value):
+        if self.armor > value:
+            self.armor -= value
+        else:
+            value -= self.armor
+            self.armor = 0
+            if value < self.health:
+                self.health -= value
+            else:
+                self.delete()
+
+    def add_mana(self, value):
+        if self.mana + value > MAX_MANA:
+            self.mana = MAX_MANA
+        else:
+            self.mana += value
+
+    def add_armor(self, value):
+        if self.armor + value > MAX_ARMOR:
+            self.armor = MAX_ARMOR
+        else:
+            self.armor += value
 
     def delete(self):
         pass
@@ -277,8 +366,16 @@ class BaseEnemy(BaseEntity):
         if all(map(lambda enemy: not enemy.is_alive, current_enemies.sprites())):
             pygame.event.post(OPEN_DOORS_EVENT)
 
+    def hit(self, value):
+        if self.health > value:
+            self.health -= value
+        else:
+            self.delete()
+
 
 class CloseEnemy(BaseEnemy):
+    """Класс противника, бегающего за героем и
+    наносящего ближний урон."""
     def __init__(self, position, health, power, speed):
         super().__init__(position, health, power)
         self.speed = speed
@@ -296,43 +393,40 @@ class CloseEnemy(BaseEnemy):
                 self.body_rect.topleft = x, y - self.radius
 
     def action(self, hero):
+        # действием является пересчёт направления движения
         if self.is_alive:
             x1, y1, = self.rect.center
             x2, y2 = hero.get_position()
             vector = (x2 - x1, y2 - y1)
-            length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+            length = get_length(*vector)
             if length > 20:
                 self.dx, self.dy, self.steps = \
                     self.speed * vector[0] / length, \
                     self.speed * vector[1] / length, length // self.speed
             else:
                 self.steps = 0
-                if hero.armor > self.power:
-                    hero.armor -= self.power
-                else:
-                    hero.armor = 0
-                    damage = self.power - hero.armor
-                    if hero.health > damage:
-                        hero.health -= damage
-                    else:
-                        hero.delete()
+                hero.hit(self.power)
 
 
 class DistanceEnemy(BaseEnemy):
+    """Класс дальнобойного врага, который стреляет в героя,
+    оставаясь на одном месте."""
     def __init__(self, position, health, power):
         super().__init__(position, health, power)
 
     def action(self, hero):
+        # действием является расчёт траектории и запуск снаряда
         if self.is_alive:
             x1, y1, = self.rect.center
             x2, y2 = hero.get_position()
             vector = (x2 - x1, y2 - y1)
-            length = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+            length = get_length(*vector)
             shells.add(
                 Shell(self.rect.center, vector, length, False, self.power))
 
 
-class Game:  # служебный класс игры
+class Game:
+    """Служебный класс игры"""
     def __init__(self, game_map, hero, camera):
         self.map = game_map
         self.hero = hero
@@ -355,6 +449,7 @@ class Game:  # служебный класс игры
         frame_rect = pygame.rect.Rect(40, 5, 200, 33)
         points_rect = frame_rect.copy()
 
+        # отрисовка элементов интерфейса
         screen.blit(interface_images['health'], (5, 5))
         points_rect.width = self.hero.health / MAX_HEALTH * frame_rect.width
         pygame.draw.rect(screen, pygame.Color("#fe0000"), points_rect)
@@ -407,6 +502,8 @@ class Game:  # служебный класс игры
             x += dx
             y += dy
 
+            global current_object
+
             # герой не сможет зайти за границы borders
             if not pygame.sprite.spritecollideany(BaseEntity((x, y)), borders):
                 # self.hero.rect.center = x, y
@@ -433,6 +530,17 @@ class Game:  # служебный класс игры
                 if not self.in_room:
                     self.change_doors_images('c', self.map.map[-1].entry, doors)
 
+            # при наличии сундука в текущей комнате и пересечении с ним открыть сундук
+            if not(current_object is None) and self.in_room and\
+                    pygame.sprite.collide_rect(self.hero, current_object):
+                self.doors_open = True
+                Object(random.choice(("health", "mana")),
+                       current_object.rect.x + TILE_WIDTH // 5,
+                       current_object.rect.y + TILE_HEIGHT // 5,
+                       self.map.map[-3], potions)
+                current_object.open('open')
+                self.open_doors()
+
     def apply_camera(self):
         for room in self.map.map:
             room.apply_camera(self.camera)
@@ -442,6 +550,7 @@ class Game:  # служебный класс игры
             self.camera.apply(shell)
 
     def lock_doors(self):
+        # закрытие дверей при входе в комнату
         door_close.play()
         change_doors(doors)
         doors.empty()
@@ -450,6 +559,7 @@ class Game:  # служебный класс игры
         borders.add(*current_doors)
 
     def change_doors_images(self, action, entry, group):
+        # открывание и закрывание дверей наглядно
         if action == 'c':
             if entry == 'h':
                 for sprite in group:
@@ -467,6 +577,7 @@ class Game:  # служебный класс игры
                     sprite.image = wall_images['parquet']
 
     def open_doors(self):
+        # открытие дверей при успешной зачистке комнаты
         door_open.play()
         borders.remove(*current_doors)
         self.change_doors_images('o', self.map.map[-3].entry, current_doors)
@@ -488,10 +599,7 @@ class Game:  # служебный класс игры
         if shell.from_hero:
             for enemy in current_enemies:
                 if enemy.is_alive and pygame.sprite.collide_circle(shell, enemy):
-                    if enemy.health > shell.damage:
-                        enemy.health -= shell.damage
-                    else:
-                        enemy.delete()
+                    enemy.hit(shell.damage)
                     shells.remove(shell)
         else:
             if pygame.sprite.collide_circle(shell, self.hero):
@@ -500,10 +608,7 @@ class Game:  # служебный класс игры
                 else:
                     damage = shell.damage - self.hero.armor
                     self.hero.armor = 0
-                    if self.hero.health > damage:
-                        self.hero.health -= damage
-                    else:
-                        self.hero.delete()
+                    self.hero.hit(damage)
                 shells.remove(shell)
         if pygame.sprite.spritecollideany(shell, borders):
             shells.remove(shell)
@@ -513,6 +618,7 @@ class Game:  # служебный класс игры
 
 
 class Shell(pygame.sprite.Sprite):
+    """Класс снаяряда. Одинаков для всех сущностей"""
     def __init__(self, pos, vector, length, from_hero, damage):
         super().__init__()
         self.speed = 7
