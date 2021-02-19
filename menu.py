@@ -140,6 +140,37 @@ def settings():
         clock.tick(FPS)
     return
 
+
+def pause():
+    start_btn = Button(17, 17, action=main)
+    settings_btn = Button(17, 17, action=settings)
+    quit_btn = Button(17, 17, action=sys.exit)
+
+    show = True
+    while show:
+        screen.blit(background, (0, 0))
+
+        head_width, head_height = get_message_size('Pause', head_font, 150)
+        print_text('Pause', HALF_WIDTH - head_width // 2, round(WIDTH / 10.8), (176, 0, 0), head_font, 150) # 10.8 - очередной коэффициент
+
+        # start_btn.draw(50, 50, 'Играть', 40)
+        settings_btn.draw(50, 68, 'Настройки', 40)
+        quit_btn.draw(50, 86, 'Выход', 40)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+
+        if pygame.mouse.get_focused():
+            screen.blit(change_cursor(main_cursor), pygame.mouse.get_pos())
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def achievements():
     back_btn = Button(13, 13)
     back_btn.draw(8, 8, 'Назад')

@@ -7,6 +7,18 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+# scores
+with open(os.path.join('data', 'statistics.txt'), 'r') as f:
+    data = f.read().split('\n')
+    result = {}
+    for i in range(len(data)):
+        data[i] = data[i].split('=')
+        result[data[i][0]] = int(data[i][1])
+
+current_score = 0
+record_score = result['record-score']
+total_kills = result['total-kills']
+
 # fonts
 main_font = os.path.join('data', 'fonts', 'main_font.ttf')
 head_font = os.path.join('data', 'fonts', 'head_font.ttf')
@@ -44,6 +56,15 @@ def print_text(message, x, y, font_color=(255, 255, 255), font_type=main_font, f
     screen.blit(text, (x, y))
 
 
+def get_message_size(message, font_type, font_size):
+    font_size = round(WIDTH / (1920 / font_size))
+    font_type = pygame.font.Font(font_type, font_size)
+    render_message = font_type.render(message, True, (255, 255, 255))
+    width, height = render_message.get_width(), render_message.get_height()
+
+    return width, height
+
+
 # sounds
 button_sound = sound('button.wav', 0.5)
 background_music = sound('background.wav', 0.1)
@@ -53,10 +74,16 @@ door_close = sound('door_close.wav', 1)
 # pics
 inactive_btn = load_image('inactive_button.png')
 active_btn = load_image('active_button.png')
+small_inactive_btn = load_image('small_inactive_button.png')
+small_active_btn = load_image('small_active_button.png')
 inactive_box = load_image('inactive_checkbox.png')
 active_box = load_image('active_checkbox.png')
 background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
 main_cursor = os.path.join('data', 'pics', 'cursor.png')
+
+# fonts
+main_font = os.path.join('data', 'fonts', 'main_font.ttf')
+head_font = os.path.join('data', 'fonts', 'head_font.ttf')
 
 # tiles
 TILE_WIDTH = TILE_HEIGHT = 50

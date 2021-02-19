@@ -61,6 +61,7 @@ HERO_GET_MANA = HERO_GET_ARMOR + 1
 ARMOR_DELAY = 20000
 MANA_DELAY = 10000
 OPEN_DOORS_EVENT = pygame.event.Event(HERO_GET_MANA + 1)
+GAME_OVER_EVENT = pygame.event.Event(HERO_GET_MANA + 2)
 entries = pygame.sprite.Group()
 current_entries = pygame.sprite.Group()
 doors = pygame.sprite.Group()
@@ -362,7 +363,19 @@ class Hero(BaseEntity):
             self.armor += value
 
     def delete(self):
-        pass
+        entries.empty()
+        current_entries.empty()
+        doors.empty()
+        current_doors.empty()
+        exits.empty()
+        borders.empty()
+        enemies.empty()
+        current_enemies.empty()
+        shells.empty()
+        obstacles.empty()
+        current_obstacles.empty()
+        potions.empty()
+        pygame.event.post(GAME_OVER_EVENT)
 
 
 class BaseEnemy(BaseEntity):
@@ -388,7 +401,8 @@ class BaseEnemy(BaseEntity):
     def delete(self):
         self.is_alive = False
         self.body_rect.h = self.body_rect.h // 2
-        if all(map(lambda enemy: not enemy.is_alive, current_enemies.sprites())):
+        if current_enemies.sprites and\
+                all(map(lambda enemy: not enemy.is_alive, current_enemies.sprites())):
             pygame.event.post(OPEN_DOORS_EVENT)
 
     def hit(self, value):
@@ -451,7 +465,7 @@ class DistanceEnemy(BaseEnemy):
 
 
 class Game:
-    """Служебный класс игры."""
+    """Служебный класс игры"""
     def __init__(self, game_map, hero, camera):
         self.map = game_map
         self.hero = hero
@@ -459,6 +473,7 @@ class Game:
         self.dx, self.dy = 0, 0
         self.in_room = False
         self.doors_open = False
+        self.score = 0
         pygame.time.set_timer(ENEMY_EVENT_TYPE, ENEMY_DELAY)
         pygame.time.set_timer(HERO_GET_ARMOR, ARMOR_DELAY)
         pygame.time.set_timer(HERO_GET_MANA, MANA_DELAY)
@@ -496,6 +511,11 @@ class Game:
         pygame.draw.rect(screen, pygame.Color("#2196f3"), points_rect)
         pygame.draw.rect(screen, pygame.Color("#464646"), frame_rect, width=2)
         print_text(f'{self.hero.mana}/{MAX_MANA}', 70, 91, font_size=25)
+
+        print_text(f'SCORE: {self.score}',
+                   HALF_WIDTH + (HALF_WIDTH - get_message_size(f'SCORE: {self.score}',
+                                                               main_font,
+                                                               35)[0]) - 10, 10, font_size=35)
 
         self.move_hero()
         self.move_enemies()
@@ -606,11 +626,8 @@ class Game:
         door_open.play()
         borders.remove(*current_doors)
         self.change_doors_images('o', self.map.map[-3].entry, current_doors)
-        for enemy in current_enemies:
-            enemy.delete()
         current_doors.empty()
         current_enemies.empty()
-        current_obstacles.empty()
         self.in_room = False
 
     def move_enemies(self):

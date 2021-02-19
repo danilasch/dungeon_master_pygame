@@ -2,20 +2,23 @@ import math
 import menu
 from classes import *
 
-
 pygame.init()
 pygame.display.set_caption('Dungeon Master')
 pygame.mouse.set_visible(False)
 
 
+def get_length(vector):  # вычисление длины вектора
+    return math.sqrt(vector[0] ** 2 + vector[1] ** 2)
+
+
 # вычисление cкоростей по осям при
-# движении в сторону точки
+# движении в сторону курсора
 def calculate_motion(start_pos, final_pos, speed):
     x1, y1, = start_pos
     x2, y2 = final_pos
-    x, y = x2 - x1, y2 - y1
-    length = get_length(x, y)
-    return speed * x / length, speed * y / length
+    vector = (x2 - x1, y2 - y1)
+    length = get_length(vector)
+    return speed * vector[0] / length, speed * vector[1] / length
 
 
 def main():
@@ -38,10 +41,16 @@ def main():
 
             if event.type == OPEN_DOORS_EVENT.type:
                 game.open_doors()
+                game.score += 1
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     menu.pause()
+
+            if game.in_room and event.type == ENEMY_EVENT_TYPE:
+                hero = game.hero
+                for enemy in current_enemies:
+                    enemy.action(hero)
 
             if game.in_room and event.type == ENEMY_EVENT_TYPE:
                 hero = game.hero
@@ -54,7 +63,19 @@ def main():
             if event.type == HERO_GET_MANA:
                 game.hero.add_mana(5)
 
+            if event.type == GAME_OVER_EVENT.type:
+                return
+                # menu.menu()
+
             if event.type == pygame.QUIT:
+                if current_score > result['record-score']:
+                    result['record-score'] = current_score
+
+                with open(os.path.join('data', 'statistics.txt'), 'w') as f:
+                    f.write(f'last-score={current_score}\n')
+                    f.write(f'record-score={result["record-score"]}\n')
+                    f.write(f'total-kills={total_kills}')
+
                 sys.exit()
 
         screen.fill(pygame.Color('black'))
