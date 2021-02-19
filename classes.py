@@ -120,7 +120,7 @@ class Wall(pygame.sprite.Sprite):
 
 
 class Room(pygame.sprite.Group):
-    def __init__(self, filename, position, entry=None):
+    def __init__(self, filename, position, entry=None, mobs=0):
         super().__init__()
         filename = "data/maps/" + filename
         with open(filename, 'r') as mapFile:
@@ -129,6 +129,8 @@ class Room(pygame.sprite.Group):
         self.height = len(self.map)
         self.width = len(self.map[0])
         self.entry = entry  # направление входа в комнату
+        if 'classroom2.txt' in filename:
+            mobs = 0
 
         doors_number = 0
         y = self.y
@@ -139,6 +141,11 @@ class Room(pygame.sprite.Group):
             for i in range(len(self.map[j])):
                 if self.map[j][i] == '.':
                     Tile('parquet', x, y, self)
+
+                    if mobs and j > 3 and random.randint(0, 60) == 0:
+                        Tile('parquet', x, y, self)
+                        enemies.add(CloseEnemy((x, y), 5, 1, 2))
+                        mobs -= 1
 
                 elif self.map[j][i] == '&':
                     Tile('wall', x, y, self, borders)
@@ -225,7 +232,7 @@ class Map:
 
         self.map = [Room('start.txt', (x, y)),
                     Room('horizontal.txt', corridor_pos),
-                    Room('classroom1.txt', classroom_pos, 'h')]
+                    Room('classroom1.txt', classroom_pos, 'h', 2)]
         # три начальные комнаты
 
     def render(self):
@@ -254,12 +261,12 @@ class Map:
                     f'classroom'
                     f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
                     f'.txt',
-                    room_pos, 'h'))
+                    room_pos, 'h', 2))
             else:
                 self.map.append(
                     Room(f'classroom'
                          f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
-                         room_pos, 'h'))
+                         room_pos, 'h', 2))
 
         else:  # новая комната и коридор к ней ниже
             change_exits(exits, room.y, room.height * TILE_HEIGHT, 'v')
@@ -276,12 +283,12 @@ class Map:
                     Room(f'classroom'
                          f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
                          f'.txt',
-                         room_pos, 'v'))
+                         room_pos, 'v', 2))
             else:
                 self.map.append(
                     Room(f'classroom'
                          f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
-                         room_pos, 'v'))
+                         room_pos, 'v', 2))
 
 
 class BaseEntity(pygame.sprite.Sprite):
@@ -619,7 +626,7 @@ class Game:
             for enemy in current_enemies:
                 if enemy.is_alive and pygame.sprite.collide_circle(shell, enemy):
                     enemy.hit(shell.damage)
-                    shells.remove(shell)
+                    shell.kill()
         else:
             if pygame.sprite.collide_circle(shell, self.hero):
                 if self.hero.armor > shell.damage:
@@ -628,15 +635,15 @@ class Game:
                     damage = shell.damage - self.hero.armor
                     self.hero.armor = 0
                     self.hero.hit(damage)
-                shells.remove(shell)
-        for border in borders:
-            if pygame.sprite.collide_circle(shell, border):
                 shell.kill()
-                if border in current_obstacles:
-                    current_obstacles.remove(border)
-                    borders.remove(border)
-                    border.image = tile_images['broken_desk']
-                    break
+
+        border = pygame.sprite.spritecollideany(shell, borders)
+        if border:
+            shell.kill()
+            if border in current_obstacles:
+                current_obstacles.remove(border)
+                borders.remove(border)
+                border.image = tile_images['broken_desk']
 
         else:
             shell.rect.center = x, y
