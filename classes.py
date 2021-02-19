@@ -79,7 +79,7 @@ class Tile(pygame.sprite.Sprite):
 class Object(pygame.sprite.Sprite):
     """Класс объекта, которым может воспользоваться игрок.
     Объект закреплён за одной из комнат. В данной версии
-    объектами являются сундуки и зелья"""
+    объектами являются сундуки и зелья."""
     def __init__(self, object_type, pos_x, pos_y, *groups):
         super().__init__(*groups)
         self.image = object_images[object_type]
@@ -138,6 +138,9 @@ class Room(pygame.sprite.Group):
 
                 elif self.map[j][i] == 'g':
                     Tile('sport', x, y, self)
+
+                elif self.map[j][i] == 'd':
+                    Tile('desk', x, y, self, borders)
 
                 elif self.map[j][i] == 'e':
                     Tile('parquet', x, y, self, entries)
@@ -240,11 +243,14 @@ class Map:
             room_pos = corridor_pos[0] + corridor.width * TILE_WIDTH, y
             if current_object is None:
                 self.map.append(Room(
-                    f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
+                    f'classroom'
+                    f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
+                    f'.txt',
                     room_pos, 'h'))
             else:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
+                    Room(f'classroom'
+                         f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
                          room_pos, 'h'))
 
         else:  # новая комната и коридор к ней ниже
@@ -258,17 +264,20 @@ class Map:
             room_pos = x, corridor_pos[1] + corridor.height * TILE_HEIGHT
             if current_object is None:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
+                    Room(f'classroom'
+                         f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
+                         f'.txt',
                          room_pos, 'v'))
             else:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
+                    Room(f'classroom'
+                         f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
                          room_pos, 'v'))
 
 
 class BaseEntity(pygame.sprite.Sprite):
     """Базовый класс игровой сущности. От него наследуются
-    классы игрока и врагов"""
+    классы игрока и врагов."""
     def __init__(self, position):
         super().__init__()
         self.radius = TILE_WIDTH * 7 // 10
@@ -426,7 +435,7 @@ class DistanceEnemy(BaseEnemy):
 
 
 class Game:
-    """Служебный класс игры"""
+    """Служебный класс игры."""
     def __init__(self, game_map, hero, camera):
         self.map = game_map
         self.hero = hero
