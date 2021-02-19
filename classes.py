@@ -30,7 +30,7 @@ def change_exits(tiles, coord, size, orientation):
     exits.empty()
 
 
-# следующие 2 функции изменяют группы спрайтов
+# следующие 3 функции изменяют группы спрайтов
 # при переходе в следующую комнату
 def change_doors(tiles):
     global current_doors
@@ -40,6 +40,11 @@ def change_doors(tiles):
 def change_enemies(tiles):
     global current_enemies
     current_enemies.add(*tiles)
+
+
+def change_obstacles(tiles):
+    global current_obstacles
+    current_obstacles.add(*tiles)
 
 
 def get_length(x, y):
@@ -65,6 +70,8 @@ borders = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 current_enemies = pygame.sprite.Group()
 shells = pygame.sprite.Group()
+obstacles = pygame.sprite.Group()
+current_obstacles = pygame.sprite.Group()
 potions = pygame.sprite.Group()
 current_object = None
 
@@ -79,7 +86,7 @@ class Tile(pygame.sprite.Sprite):
 class Object(pygame.sprite.Sprite):
     """Класс объекта, которым может воспользоваться игрок.
     Объект закреплён за одной из комнат. В данной версии
-    объектами являются сундуки и зелья"""
+    объектами являются сундуки и зелья."""
     def __init__(self, object_type, pos_x, pos_y, *groups):
         super().__init__(*groups)
         self.image = object_images[object_type]
@@ -113,7 +120,7 @@ class Wall(pygame.sprite.Sprite):
 
 
 class Room(pygame.sprite.Group):
-    def __init__(self, filename, position, entry=None):
+    def __init__(self, filename, position, entry=None, mobs=0):
         super().__init__()
         filename = "data/maps/" + filename
         with open(filename, 'r') as mapFile:
@@ -122,6 +129,8 @@ class Room(pygame.sprite.Group):
         self.height = len(self.map)
         self.width = len(self.map[0])
         self.entry = entry  # направление входа в комнату
+        if 'classroom2.txt' in filename:
+            mobs = 0
 
         doors_number = 0
         y = self.y
@@ -133,11 +142,19 @@ class Room(pygame.sprite.Group):
                 if self.map[j][i] == '.':
                     Tile('parquet', x, y, self)
 
+                    if mobs and j > 3 and random.randint(0, 60) == 0:
+                        Tile('parquet', x, y, self)
+                        enemies.add(CloseEnemy((x, y), 5, 1, 2))
+                        mobs -= 1
+
                 elif self.map[j][i] == '&':
                     Tile('wall', x, y, self, borders)
 
                 elif self.map[j][i] == 'g':
                     Tile('sport', x, y, self)
+
+                elif self.map[j][i] == 'd':
+                    Tile('desk', x, y, self, borders, obstacles)
 
                 elif self.map[j][i] == 'e':
                     Tile('parquet', x, y, self, entries)
@@ -215,7 +232,7 @@ class Map:
 
         self.map = [Room('start.txt', (x, y)),
                     Room('horizontal.txt', corridor_pos),
-                    Room('classroom1.txt', classroom_pos, 'h')]
+                    Room('classroom1.txt', classroom_pos, 'h', 2)]
         # три начальные комнаты
 
     def render(self):
@@ -232,6 +249,7 @@ class Map:
         if direction == 0:  # новая комната и коридор к ней справа
             change_exits(exits, room.x, room.width * TILE_WIDTH, 'h')
             change_enemies(enemies)
+            change_obstacles(obstacles)
             x, y = room.x, room.y
             width, height = room.width, room.height
             corridor_pos = x + width * TILE_WIDTH, y + (height // 2 - 1) * TILE_HEIGHT
@@ -240,16 +258,20 @@ class Map:
             room_pos = corridor_pos[0] + corridor.width * TILE_WIDTH, y
             if current_object is None:
                 self.map.append(Room(
-                    f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
-                    room_pos, 'h'))
+                    f'classroom'
+                    f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
+                    f'.txt',
+                    room_pos, 'h', 2))
             else:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
-                         room_pos, 'h'))
+                    Room(f'classroom'
+                         f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
+                         room_pos, 'h', 2))
 
         else:  # новая комната и коридор к ней ниже
             change_exits(exits, room.y, room.height * TILE_HEIGHT, 'v')
             change_enemies(enemies)
+            change_obstacles(obstacles)
             x, y = room.x, room.y
             width, height = room.width, room.height
             corridor_pos = x + (width // 2 - 2) * TILE_WIDTH, y + height * TILE_HEIGHT
@@ -258,17 +280,20 @@ class Map:
             room_pos = x, corridor_pos[1] + corridor.height * TILE_HEIGHT
             if current_object is None:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "2"))}.txt',
-                         room_pos, 'v'))
+                    Room(f'classroom'
+                         f'{random.choice(("1", "2", "2", "3", "4", "5", "6", "7", "8", "9", "10"))}'
+                         f'.txt',
+                         room_pos, 'v', 2))
             else:
                 self.map.append(
-                    Room(f'classroom{random.choice(("1", "1", "1", "1", "1"))}.txt',
-                         room_pos, 'v'))
+                    Room(f'classroom'
+                         f'{random.choice(("1", "3", "4", "5", "6", "7", "8", "9", "10"))}.txt',
+                         room_pos, 'v', 2))
 
 
 class BaseEntity(pygame.sprite.Sprite):
     """Базовый класс игровой сущности. От него наследуются
-    классы игрока и врагов"""
+    классы игрока и врагов."""
     def __init__(self, position):
         super().__init__()
         self.radius = TILE_WIDTH * 7 // 10
@@ -426,7 +451,7 @@ class DistanceEnemy(BaseEnemy):
 
 
 class Game:
-    """Служебный класс игры"""
+    """Служебный класс игры."""
     def __init__(self, game_map, hero, camera):
         self.map = game_map
         self.hero = hero
@@ -585,6 +610,7 @@ class Game:
             enemy.delete()
         current_doors.empty()
         current_enemies.empty()
+        current_obstacles.empty()
         self.in_room = False
 
     def move_enemies(self):
@@ -600,7 +626,7 @@ class Game:
             for enemy in current_enemies:
                 if enemy.is_alive and pygame.sprite.collide_circle(shell, enemy):
                     enemy.hit(shell.damage)
-                    shells.remove(shell)
+                    shell.kill()
         else:
             if pygame.sprite.collide_circle(shell, self.hero):
                 if self.hero.armor > shell.damage:
@@ -609,9 +635,15 @@ class Game:
                     damage = shell.damage - self.hero.armor
                     self.hero.armor = 0
                     self.hero.hit(damage)
-                shells.remove(shell)
-        if pygame.sprite.spritecollideany(shell, borders):
-            shells.remove(shell)
+                shell.kill()
+
+        border = pygame.sprite.spritecollideany(shell, borders)
+        if border:
+            shell.kill()
+            if border in current_obstacles:
+                current_obstacles.remove(border)
+                borders.remove(border)
+                border.image = tile_images['broken_desk']
 
         else:
             shell.rect.center = x, y

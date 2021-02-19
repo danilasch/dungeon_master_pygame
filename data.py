@@ -64,7 +64,8 @@ tile_images = {
     'floor': load_image('floor.png'), 'wall': load_image('wall.png'),
     'parquet': load_image('parquet.png'), 'sport': load_image('sport_parquet.png'),
     'entry_h': load_image('entry_h.png'), 'exit_h': load_image('exit_h.png'),
-    'exit_v': load_image('exit_v.png'), 'empty': load_image('empty.png')
+    'exit_v': load_image('exit_v.png'), 'empty': load_image('empty.png'),
+    'desk': load_image('desk.png'), 'broken_desk': load_image('broken_desk.png')
 }
 
 wall_images = {
