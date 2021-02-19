@@ -30,7 +30,7 @@ def change_exits(tiles, coord, size, orientation):
     exits.empty()
 
 
-# следующие 2 функции изменяют группы спрайтов
+# следующие 3 функции изменяют группы спрайтов
 # при переходе в следующую комнату
 def change_doors(tiles):
     global current_doors
@@ -40,6 +40,11 @@ def change_doors(tiles):
 def change_enemies(tiles):
     global current_enemies
     current_enemies.add(*tiles)
+
+
+def change_obstacles(tiles):
+    global current_obstacles
+    current_obstacles.add(*tiles)
 
 
 def get_length(x, y):
@@ -65,6 +70,8 @@ borders = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 current_enemies = pygame.sprite.Group()
 shells = pygame.sprite.Group()
+obstacles = pygame.sprite.Group()
+current_obstacles = pygame.sprite.Group()
 potions = pygame.sprite.Group()
 current_object = None
 
@@ -140,7 +147,7 @@ class Room(pygame.sprite.Group):
                     Tile('sport', x, y, self)
 
                 elif self.map[j][i] == 'd':
-                    Tile('desk', x, y, self, borders)
+                    Tile('desk', x, y, self, borders, obstacles)
 
                 elif self.map[j][i] == 'e':
                     Tile('parquet', x, y, self, entries)
@@ -235,6 +242,7 @@ class Map:
         if direction == 0:  # новая комната и коридор к ней справа
             change_exits(exits, room.x, room.width * TILE_WIDTH, 'h')
             change_enemies(enemies)
+            change_obstacles(obstacles)
             x, y = room.x, room.y
             width, height = room.width, room.height
             corridor_pos = x + width * TILE_WIDTH, y + (height // 2 - 1) * TILE_HEIGHT
@@ -256,6 +264,7 @@ class Map:
         else:  # новая комната и коридор к ней ниже
             change_exits(exits, room.y, room.height * TILE_HEIGHT, 'v')
             change_enemies(enemies)
+            change_obstacles(obstacles)
             x, y = room.x, room.y
             width, height = room.width, room.height
             corridor_pos = x + (width // 2 - 2) * TILE_WIDTH, y + height * TILE_HEIGHT
@@ -594,6 +603,7 @@ class Game:
             enemy.delete()
         current_doors.empty()
         current_enemies.empty()
+        current_obstacles.empty()
         self.in_room = False
 
     def move_enemies(self):
@@ -619,8 +629,14 @@ class Game:
                     self.hero.armor = 0
                     self.hero.hit(damage)
                 shells.remove(shell)
-        if pygame.sprite.spritecollideany(shell, borders):
-            shells.remove(shell)
+        for border in borders:
+            if pygame.sprite.collide_circle(shell, border):
+                shell.kill()
+                if border in current_obstacles:
+                    current_obstacles.remove(border)
+                    borders.remove(border)
+                    border.image = tile_images['broken_desk']
+                    break
 
         else:
             shell.rect.center = x, y
