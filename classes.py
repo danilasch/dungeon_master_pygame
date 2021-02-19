@@ -399,11 +399,14 @@ class BaseEnemy(BaseEntity):
         camera.apply(self)
 
     def delete(self):
+        global total_kills
+
         self.is_alive = False
         self.body_rect.h = self.body_rect.h // 2
         if current_enemies.sprites and\
                 all(map(lambda enemy: not enemy.is_alive, current_enemies.sprites())):
             pygame.event.post(OPEN_DOORS_EVENT)
+        total_kills += 1
 
     def hit(self, value):
         if self.health > value:
@@ -622,6 +625,8 @@ class Game:
                     sprite.image = wall_images['parquet']
 
     def open_doors(self):
+        global current_score
+
         # открытие дверей при успешной зачистке комнаты
         door_open.play()
         borders.remove(*current_doors)
@@ -629,6 +634,7 @@ class Game:
         current_doors.empty()
         current_enemies.empty()
         self.in_room = False
+        current_score += 1
 
     def move_enemies(self):
         for enemy in current_enemies:

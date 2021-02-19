@@ -1,6 +1,7 @@
 import math
 import menu
 from classes import *
+import classes
 
 pygame.init()
 pygame.display.set_caption('Dungeon Master')
@@ -68,13 +69,13 @@ def main():
                 # menu.menu()
 
             if event.type == pygame.QUIT:
-                if current_score > result['record-score']:
-                    result['record-score'] = current_score
+                if classes.current_score > result['record-score']:
+                    result['record-score'] = classes.current_score
 
                 with open(os.path.join('data', 'statistics.txt'), 'w') as f:
-                    f.write(f'last-score={current_score}\n')
+                    f.write(f'last-score={classes.current_score}\n')
                     f.write(f'record-score={result["record-score"]}\n')
-                    f.write(f'total-kills={total_kills}')
+                    f.write(f'total-kills={classes.total_kills}')
 
                 sys.exit()
 
